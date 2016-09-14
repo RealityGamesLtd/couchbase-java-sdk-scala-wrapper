@@ -14,12 +14,13 @@ object Conversion {
 
   protected[couchbase] implicit class JsonExt[T](underlying: T)(implicit write: Writes[T]) {
 
-    def createCouchbaseDocument(id: String): RawJsonDocument = {
-      RawJsonDocument.create(id, Json.toJson(underlying).toString)
-    }
-
-    def createCouchbaseDocument(id: String, cas: CAS): RawJsonDocument = {
-      RawJsonDocument.create(id, Json.toJson(underlying).toString, cas)
+    def createCouchbaseDocument(id: String, expiry: Int = 0, cas: CAS = 0l): RawJsonDocument = {
+      RawJsonDocument.create(
+        id,
+        expiry,
+        Json.toJson(underlying).toString,
+        cas
+      )
     }
   }
 
