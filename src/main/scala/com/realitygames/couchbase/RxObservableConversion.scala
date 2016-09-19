@@ -9,13 +9,17 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object RxObservableConversion {
 
-  protected[couchbase] implicit def asyncViewRow2x[T](
+  protected[couchbase] implicit def asyncViewRow2document[T](
     view: AsyncViewRow
   )(
     implicit ec: ExecutionContext,
     reads: Reads[T]
-  ): T = {
-    Json.parse(view.value().toString).validate[T].get
+  ): Document[T] = {
+    Document(
+      id = view.id(),
+      cas = 0l,
+      content = Json.parse(view.value().toString).validate[T].get
+    )
   }
 
   implicit protected[couchbase] class ObservableConversions[T](underlying: rx.Observable[T]) {

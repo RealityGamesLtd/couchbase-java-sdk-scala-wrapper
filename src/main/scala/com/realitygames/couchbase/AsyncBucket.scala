@@ -2,7 +2,7 @@ package com.realitygames.couchbase
 
 import com.couchbase.client.java.view.ViewQuery
 import com.couchbase.client.java.{AsyncBucket => JavaAsyncBucket}
-import com.realitygames.couchbase.RxObservableConversion.{ObservableConversions, asyncViewRow2x}
+import com.realitygames.couchbase.RxObservableConversion.{ObservableConversions, asyncViewRow2document}
 import com.realitygames.couchbase.ViewResult.{FailureViewResult, SuccessViewResult}
 import play.api.libs.json._
 
@@ -74,7 +74,7 @@ class AsyncBucket(bucket: JavaAsyncBucket) {
   def query[T : TypeTag](query: ViewQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[ViewResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
 
     if (viewResult.success()) {
-      viewResult.rows().asFutureList[T](asyncViewRow2x(_)(ec, reads), ec) map { documents =>
+      viewResult.rows().asFutureList[Document[T]](asyncViewRow2document(_)(ec, reads), ec) map { documents =>
 
         SuccessViewResult(
           documents,

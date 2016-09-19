@@ -7,7 +7,7 @@ object ViewResult {
   case object FailureViewResult extends ViewResult[Nothing]
 
   case class SuccessViewResult[T](
-    values: Seq[T],
+    values: Seq[Document[T]],
     totalResults: Int
   ) extends ViewResult[T]
 }
