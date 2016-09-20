@@ -8,11 +8,10 @@ import play.api.libs.json._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.reflect.runtime.universe._
 
 class AsyncBucket(bucket: JavaAsyncBucket) {
 
-  def atomicUpdate[T : TypeTag](id: String, lockTime: Duration = 3.seconds)(update: Document[T] => Future[T])(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def atomicUpdate[T](id: String, lockTime: Duration = 3.seconds)(update: Document[T] => Future[T])(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
 
     assert(lockTime >= 1.seconds && lockTime <= 30.seconds, "Lock time must be between 1 and 30 seconds")
 
@@ -47,12 +46,12 @@ class AsyncBucket(bucket: JavaAsyncBucket) {
     bucket.get(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def getAndTouch[T : TypeTag](id: String, expiry: Expiration)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def getAndTouch[T](id: String, expiry: Expiration)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, expiry = expiry.seconds)
     bucket.getAndTouch(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def insert[T : TypeTag](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: Format[T], writes: Writes[T], ec: ExecutionContext): Future[Document[T]] = {
+  def insert[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: Format[T], writes: Writes[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiration.seconds)
     bucket.insert(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
@@ -61,17 +60,17 @@ class AsyncBucket(bucket: JavaAsyncBucket) {
     bucket.remove(id).asFuture map RemovedDocument.fromCouchbaseDoc
   }
 
-  def replace[T : TypeTag](id: String, value: T)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def replace[T](id: String, value: T)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value))
     bucket.replace(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def upsert[T : TypeTag](id: String, value: T)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def upsert[T](id: String, value: T)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value))
     bucket.upsert(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def query[T : TypeTag](query: ViewQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[ViewResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
+  def query[T](query: ViewQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[ViewResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
 
     if (viewResult.success()) {
       viewResult.rows().asFutureList[Document[T]](asyncViewRow2document(_)(ec, reads), ec) map { documents =>
