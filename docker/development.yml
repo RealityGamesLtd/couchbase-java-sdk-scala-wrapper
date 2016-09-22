@@ -1,0 +1,15 @@
+version: '2'
+services:
+  couchbase:
+    image: realitygames/couchbase-test:latest
+    network_mode: "host"
+    ports:
+      - "8091-8094:8091-8094"
+      - "11210:11210"
+    environment:
+      - BUCKETS=users viewQuery
+      - MEMORY_QUOTA=500
+      - TIMEOUT=10
+    volumes:
+      - ./couchbase/views:/opt/couchbase-views/:ro
+      - ./couchbase/data:/opt/couchbase-data/:ro

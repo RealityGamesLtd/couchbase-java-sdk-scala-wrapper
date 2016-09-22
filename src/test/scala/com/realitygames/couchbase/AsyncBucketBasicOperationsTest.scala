@@ -11,7 +11,9 @@ import org.scalatest.concurrent.ScalaFutures
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AsyncBucketBasicOperationsTest extends AsyncWordSpec with MustMatchers with TestBucket with ScalaFutures with BeforeAndAfterAll with RecoverMethods {
+class AsyncBucketBasicOperationsTest extends AsyncWordSpec with MustMatchers with BucketTesting with ScalaFutures with BeforeAndAfterAll with RecoverMethods {
+
+  override def bucketName: String = "users"
 
   override protected def afterAll(): Unit = {
     bucket.close()

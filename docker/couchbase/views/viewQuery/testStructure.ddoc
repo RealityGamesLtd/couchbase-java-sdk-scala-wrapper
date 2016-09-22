@@ -1,0 +1,44 @@
+{
+    "views": {
+        "get_object": {
+            "map": "function(doc, meta) {
+                emit(meta.id, doc);
+            }"
+        },
+        "get_string": {
+            "map": "function(doc, meta) {
+                emit(meta.id, doc.string);
+            }"
+        },
+        "get_int": {
+            "map": "function(doc, meta) {
+                emit(meta.id, doc.int);
+            }"
+        },
+        "get_long": {
+            "map": "function(doc, meta) {
+                emit(meta.id, doc.long);
+            }"
+        },
+        "get_byte": {
+            "map": "function(doc, meta) {
+                emit(meta.id, doc.byte);
+            }"
+        },
+        "get_boolean": {
+            "map": "function(doc, meta) {
+                emit(meta.id, doc.boolean);
+            }"
+        },
+        "get_float": {
+            "map": "function(doc, meta) {
+                emit(meta.id, doc.float);
+            }"
+        },
+        "get_double": {
+            "map": "function(doc, meta) {
+                emit(meta.id, doc.double);
+            }"
+        }
+    }
+}

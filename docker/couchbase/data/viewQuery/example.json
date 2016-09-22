@@ -1,0 +1,9 @@
+{
+  "string": "string",
+  "int": 1,
+  "long": 2,
+  "byte": 3,
+  "boolean": true,
+  "float": 4.5,
+  "double": 5.5
+}
