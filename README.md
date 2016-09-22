@@ -7,7 +7,6 @@ It is still work in progress. If reactive couchbase pains you so much you can cl
 
 ## JSON Serialization
 
-
 Currently project supports only `play-json`.
 
 ## Usage
@@ -38,3 +37,16 @@ bucket.insert("someid", user)
 //returns Future[User]
 bucket.get[User]("someid")
 ```
+
+## Supported operations on bucket
+
+* exists
+* insert
+* insert
+* remove
+* get
+* replace
+* upsert
+* getAndTouch
+* query *(only ViewQuery, use java classes to create query)* 
+* atomicUpdate
