@@ -1,7 +1,12 @@
 # couchbase-java-sdk-scala-wrapper
 Couchbase Java SDK wrapper for Scala with futures
 
+## How to use
+It is still work in progress. If reactive couchbase pains you so much you can clone the repo and build your own (`publishLocal`). Then the depenency is:
+```"com.realitygames" %% "couchbase-java-sdk-scala-wrapper" % "0.1-SNAPSHOT"```.
+
 ## JSON Serialization
+
 
 Currently project supports only `play-json`.
 
