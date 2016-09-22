@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/RealityGamesLtd/couchbase-java-sdk-scala-wrapper.svg?branch=master)](https://travis-ci.org/RealityGamesLtd/couchbase-java-sdk-scala-wrapper)
+
 # couchbase-java-sdk-scala-wrapper
 Couchbase Java SDK wrapper for Scala with futures
 
