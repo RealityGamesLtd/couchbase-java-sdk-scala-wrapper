@@ -17,6 +17,6 @@ before_install:
   - sudo mv docker-compose /usr/local/bin
 
 script:
-  - ./docker && docker-compose -f  ./docker/development.yml up -d
+  - docker-compose -f  ./docker/development.yml up -d
 #  - sleep 50s
   - sbt ++$TRAVIS_SCALA_VERSION test
