@@ -2,7 +2,6 @@ version: '2'
 services:
   couchbase:
     image: realitygames/couchbase-test:latest
-    network_mode: "host"
     ports:
       - "8091-8094:8091-8094"
       - "11210:11210"
