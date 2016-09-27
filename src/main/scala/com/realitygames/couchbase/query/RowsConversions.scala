@@ -10,18 +10,20 @@ import scala.concurrent.ExecutionContext
 
 protected[couchbase] trait RowsConversions extends JsonConversions {
 
-  implicit protected[couchbase] def asyncViewRow2document[T](
+  protected[couchbase] def asyncViewRow2document[T](
     view: AsyncViewRow
   )(
     implicit ec: ExecutionContext,
     reads: Reads[T]
-  ): Document[T] = {
+  ): Either[ParseFailedDocument, Document[T]] = {
 
-    value2jsValue(view.value()).validate[T] match {
+    val jsValue = value2jsValue(view.value())
+
+    jsValue.validate[T] match {
       case JsError(errors) =>
-        throw JsResultException(errors)
+        Left(ParseFailedDocument(jsValue, JsResultException(errors)))
       case JsSuccess(content, _) =>
-        Document(view.id(), 0l, content)
+        Right(Document(view.id(), 0l, content))
     }
   }
 

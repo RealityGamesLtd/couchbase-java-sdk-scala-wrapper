@@ -8,7 +8,7 @@ import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBuck
 import com.realitygames.couchbase.model.{Document, Expiration, RemovedDocument}
 import com.realitygames.couchbase.query.QueryResult.{FailureQueryResult, SuccessQueryResult}
 import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversions
-import com.realitygames.couchbase.query.{QueryResult, RowsConversions}
+import com.realitygames.couchbase.query.{ParseFailedDocument, QueryResult, RowsConversions}
 import com.realitygames.couchbase.util.{DocumentUtil, JsonConversions}
 import play.api.libs.json._
 
@@ -79,12 +79,12 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
   def query[T](query: ViewQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[QueryResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
 
     if (viewResult.success()) {
-      viewResult.rows().mapAsFuture[Document[T]](asyncViewRow2document) map { documents =>
+      viewResult.rows().mapAsFuture[Either[ParseFailedDocument, Document[T]]](asyncViewRow2document) map { documents =>
 
         SuccessQueryResult(
-          documents,
+          documents collect { case Right(document) => document },
           viewResult.totalRows(),
-          Seq.empty //TODO
+          documents collect { case Left(failedDocument) => failedDocument }
         )
       }
     } else {
