@@ -5,8 +5,11 @@ import java.util.concurrent.TimeUnit
 import com.couchbase.client.java.query.N1qlQuery
 import com.couchbase.client.java.view.ViewQuery
 import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket}
-import com.realitygames.couchbase.QueryResult.{FailureQueryResult, SuccessQueryResult}
-import com.realitygames.couchbase.RxObservableConversion.ObservableConversions
+import com.realitygames.couchbase.model.{Document, Expiration}
+import com.realitygames.couchbase.query.QueryResult.{FailureQueryResult, SuccessQueryResult}
+import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversions
+import com.realitygames.couchbase.query.{QueryResult, RowsConversions}
+import com.realitygames.couchbase.util.{DocumentUtil, JsonConversions}
 import play.api.libs.json._
 
 import scala.concurrent.duration._
@@ -80,7 +83,8 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
 
         SuccessQueryResult(
           documents,
-          viewResult.totalRows()
+          viewResult.totalRows(),
+          Seq.empty //TODO
         )
       }
     } else {
@@ -95,7 +99,7 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
           queryResult.finalSuccess().asFuture flatMap { success =>
             if(success) {
               queryResult.rows().mapAsFuture[Document[T]](asyncN1qlRow2document).map { docs =>
-                SuccessQueryResult(docs, docs.size)
+                SuccessQueryResult(docs, docs.size, Seq.empty /*TODO*/)
               }
             } else {
               Future.successful(FailureQueryResult("query failed"))

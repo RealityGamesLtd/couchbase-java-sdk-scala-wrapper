@@ -1,6 +1,5 @@
-package com.realitygames.couchbase
+package com.realitygames.couchbase.util
 
-import java.util
 import java.util.{HashMap => JHashMap}
 
 import com.couchbase.client.java.document.json.JsonObject
@@ -25,7 +24,7 @@ protected[couchbase] trait JsonConversions {
         JsBoolean(b)
       case null =>
         JsNull
-      case a: util.ArrayList[_] =>
+      case a: java.util.ArrayList[_] =>
         JsArray(a map value2jsValue)
       case i: Number =>
         JsNumber(BigDecimal(i.toString))

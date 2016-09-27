@@ -3,6 +3,7 @@ package com.realitygames.couchbase
 import java.util.UUID
 
 import com.couchbase.client.java.error.{DocumentAlreadyExistsException, DocumentDoesNotExistException}
+import com.realitygames.couchbase.model.Expiration
 import com.realitygames.couchbase.models.User
 import org.joda.time.DateTime
 import org.scalatest._
