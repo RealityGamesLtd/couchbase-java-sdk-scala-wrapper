@@ -8,7 +8,7 @@ import org.scalatest.{AsyncWordSpec, _}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with BucketTesting with ScalaFutures
+class ScalaAsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with BucketTesting with ScalaFutures
   with BeforeAndAfterAll with RecoverMethods with Inside {
   val testValueId = "example"
 
