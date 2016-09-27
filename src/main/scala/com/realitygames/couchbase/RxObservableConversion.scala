@@ -10,34 +10,7 @@ import rx.SingleSubscriber
 import scala.collection.JavaConversions.iterableAsScalaIterable
 import scala.collection.breakOut
 import scala.concurrent.{ExecutionContext, Future, Promise}
-object RxObservableConversion {
-
-  protected[couchbase] implicit def asyncViewRow2document[T](
-    view: AsyncViewRow
-  )(
-    implicit ec: ExecutionContext,
-    reads: Reads[T]
-  ): Document[T] = {
-
-    Document(
-      id = view.id(),
-      cas = 0l,
-      content = Conversion.value2jsValue(view.value()).validate[T].get
-    )
-  }
-
-  implicit protected[couchbase] def asyncViewRow2document[T](
-    view: AsyncN1qlQueryRow
-  )(
-    implicit ec: ExecutionContext,
-    reads: Reads[T]
-  ): Document[T] = {
-    Document(
-      id = "",
-      cas = 0l,
-      content = Json.parse(view.value().toString).\("auth-service").validate[T].get
-    )
-  }
+object RxObservableConversion extends RowsConversions {
 
   implicit protected[couchbase] class ObservableConversions[T](underlying: rx.Observable[T]) {
 
@@ -51,12 +24,12 @@ object RxObservableConversion {
       p.future
     }
 
-    def asFutureList[A](implicit unpack: T => A, ec: ExecutionContext): Future[Seq[A]] = {
+    def mapAsFuture[A](f: T => A)(implicit ec: ExecutionContext): Future[Seq[A]] = {
 
       val p = Promise[List[A]]()
       underlying.toList.toSingle.subscribe(new SingleSubscriber[util.List[T]] {
         override def onError(error: Throwable): Unit = p.failure(error)
-        override def onSuccess(value: util.List[T]): Unit = p.success(value.toList.map(unpack)(breakOut))
+        override def onSuccess(value: util.List[T]): Unit = p.success(value.toList.map(f)(breakOut))
       })
 
       p.future

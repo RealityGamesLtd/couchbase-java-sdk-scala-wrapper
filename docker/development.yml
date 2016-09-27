@@ -13,3 +13,4 @@ services:
     volumes:
       - ./couchbase/views:/opt/couchbase-views/:ro
       - ./couchbase/data:/opt/couchbase-data/:ro
+      - ./couchbase/n1ql:/opt/couchbase-n1ql/:ro

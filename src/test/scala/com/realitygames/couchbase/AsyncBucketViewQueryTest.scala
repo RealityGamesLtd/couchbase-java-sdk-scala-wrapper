@@ -1,7 +1,7 @@
 package com.realitygames.couchbase
 
 import com.couchbase.client.java.view.ViewQuery
-import com.realitygames.couchbase.ViewResult.SuccessViewResult
+import com.realitygames.couchbase.QueryResult.SuccessQueryResult
 import com.realitygames.couchbase.models.TestStructure
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{AsyncWordSpec, _}
@@ -9,14 +9,10 @@ import org.scalatest.{AsyncWordSpec, _}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with BucketTesting with ScalaFutures
-  with BeforeAndAfterAll with RecoverMethods with Inside {
+  with RecoverMethods with Inside {
   val testValueId = s"example"
 
   override def bucketName: String = "viewQuery"
-
-  override protected def afterAll(): Unit = {
-    bucket.close()
-  }
 
   "AsyncBucket.query" should {
     "view get_object should return User value" in {
@@ -24,7 +20,7 @@ class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with Buck
         result <- bucket.query[TestStructure](ViewQuery.from("testStructure", "get_object").key(testValueId).limit(1))
       } yield {
         inside(result){
-          case SuccessViewResult(documents, _) =>
+          case SuccessQueryResult(documents, _) =>
             documents.head.content mustEqual TestStructure("string", 1, 2, 3, true, 4.5f, 5.5)
         }
       }
@@ -34,7 +30,7 @@ class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with Buck
         result <- bucket.query[String](ViewQuery.from("testStructure", "get_string").key(testValueId).limit(1))
       } yield {
         inside(result){
-          case SuccessViewResult(documents, _) =>
+          case SuccessQueryResult(documents, _) =>
             documents.head.content mustEqual "string"
         }
       }
@@ -44,7 +40,7 @@ class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with Buck
         result <- bucket.query[Int](ViewQuery.from("testStructure", "get_int").key(testValueId).limit(1))
       } yield {
         inside(result){
-          case SuccessViewResult(documents, _) =>
+          case SuccessQueryResult(documents, _) =>
             documents.head.content mustEqual 1
         }
       }
@@ -54,7 +50,7 @@ class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with Buck
         result <- bucket.query[Long](ViewQuery.from("testStructure", "get_long").key(testValueId).limit(1))
       } yield {
         inside(result){
-          case SuccessViewResult(documents, _) =>
+          case SuccessQueryResult(documents, _) =>
             documents.head.content mustEqual 2l
         }
       }
@@ -64,7 +60,7 @@ class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with Buck
         result <- bucket.query[Byte](ViewQuery.from("testStructure", "get_byte").key(testValueId).limit(1))
       } yield {
         inside(result){
-          case SuccessViewResult(documents, _) =>
+          case SuccessQueryResult(documents, _) =>
             documents.head.content mustEqual 3
         }
       }
@@ -74,7 +70,7 @@ class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with Buck
         result <- bucket.query[Boolean](ViewQuery.from("testStructure", "get_boolean").key(testValueId).limit(1))
       } yield {
         inside(result){
-          case SuccessViewResult(documents, _) =>
+          case SuccessQueryResult(documents, _) =>
             documents.head.content mustEqual true
         }
       }
@@ -84,7 +80,7 @@ class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with Buck
         result <- bucket.query[Float](ViewQuery.from("testStructure", "get_float").key(testValueId).limit(1))
       } yield {
         inside(result){
-          case SuccessViewResult(documents, _) =>
+          case SuccessQueryResult(documents, _) =>
             documents.head.content mustEqual 4.5f
         }
       }
@@ -94,7 +90,7 @@ class AsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with Buck
         result <- bucket.query[Double](ViewQuery.from("testStructure", "get_double").key(testValueId).limit(1))
       } yield {
         inside(result){
-          case SuccessViewResult(documents, _) =>
+          case SuccessQueryResult(documents, _) =>
             documents.head.content mustEqual 5.5
         }
       }
