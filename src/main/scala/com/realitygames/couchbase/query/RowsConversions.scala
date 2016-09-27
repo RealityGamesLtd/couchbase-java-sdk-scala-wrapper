@@ -21,7 +21,7 @@ protected[couchbase] trait RowsConversions extends JsonConversions {
 
     jsValue.validate[T] match {
       case JsError(errors) =>
-        Left(ParseFailedDocument(jsValue, JsResultException(errors)))
+        Left(ParseFailedDocument(view.id(), jsValue, JsResultException(errors)))
       case JsSuccess(content, _) =>
         Right(Document(view.id(), 0l, content))
     }
