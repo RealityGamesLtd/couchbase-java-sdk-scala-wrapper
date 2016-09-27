@@ -5,7 +5,7 @@ import java.util.concurrent.TimeUnit
 import com.couchbase.client.java.query.N1qlQuery
 import com.couchbase.client.java.view.ViewQuery
 import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket}
-import com.realitygames.couchbase.model.{Document, Expiration}
+import com.realitygames.couchbase.model.{Document, Expiration, RemovedDocument}
 import com.realitygames.couchbase.query.QueryResult.{FailureQueryResult, SuccessQueryResult}
 import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversions
 import com.realitygames.couchbase.query.{QueryResult, RowsConversions}
