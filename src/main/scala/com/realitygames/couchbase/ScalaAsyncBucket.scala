@@ -1,16 +1,21 @@
 package com.realitygames.couchbase
 
 import com.couchbase.client.java.query.{AsyncN1qlQueryRow, N1qlQuery, N1qlQueryResult}
+import java.util.concurrent.TimeUnit
+
 import com.couchbase.client.java.view.ViewQuery
 import com.couchbase.client.java.{AsyncBucket => JavaAsyncBucket}
 import com.realitygames.couchbase.RxObservableConversion._
 import com.realitygames.couchbase.QueryResult.{FailureQueryResult, SuccessQueryResult}
+import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket}
+import com.realitygames.couchbase.RxObservableConversion.{ObservableConversions, asyncViewRow2document}
+import com.realitygames.couchbase.ViewResult.{FailureViewResult, SuccessViewResult}
 import play.api.libs.json._
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 
-class AsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with JsonConversions {
+class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with JsonConversions {
 
   def atomicUpdate[T](id: String, lockTime: Duration = 3.seconds)(update: Document[T] => Future[T])(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
 
@@ -103,5 +108,24 @@ class AsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with JsonConv
 
       } else Future.successful(FailureQueryResult("Parse error - instant fail. Check your N1ql syntax."))
     }
+  }
+}
+
+object ScalaAsyncBucket {
+  def apply(configuration: BucketConfiguration): ScalaAsyncBucket = {
+    val cluster = CouchbaseCluster.create(configuration.hosts:_*)
+
+    configuration.timeout.map(_.toMillis) match {
+      case Some(timeout) =>
+        cluster
+          .openBucket(configuration.bucket, configuration.password.orNull, timeout, TimeUnit.MILLISECONDS)
+          .scalaAsync()
+      case None =>
+        cluster
+          .openBucket(configuration.bucket, configuration.password.orNull)
+          .scalaAsync()
+    }
+
+
   }
 }
