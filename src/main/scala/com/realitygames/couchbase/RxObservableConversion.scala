@@ -2,9 +2,6 @@ package com.realitygames.couchbase
 
 import java.util
 
-import com.couchbase.client.java.query.AsyncN1qlQueryRow
-import com.couchbase.client.java.view.AsyncViewRow
-import play.api.libs.json.{Json, Reads}
 import rx.SingleSubscriber
 
 import scala.collection.JavaConversions.iterableAsScalaIterable

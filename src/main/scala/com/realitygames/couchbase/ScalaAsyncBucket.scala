@@ -1,15 +1,12 @@
 package com.realitygames.couchbase
 
-import com.couchbase.client.java.query.{AsyncN1qlQueryRow, N1qlQuery, N1qlQueryResult}
 import java.util.concurrent.TimeUnit
 
+import com.couchbase.client.java.query.N1qlQuery
 import com.couchbase.client.java.view.ViewQuery
-import com.couchbase.client.java.{AsyncBucket => JavaAsyncBucket}
-import com.realitygames.couchbase.RxObservableConversion._
-import com.realitygames.couchbase.QueryResult.{FailureQueryResult, SuccessQueryResult}
 import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket}
-import com.realitygames.couchbase.RxObservableConversion.{ObservableConversions, asyncViewRow2document}
-import com.realitygames.couchbase.ViewResult.{FailureViewResult, SuccessViewResult}
+import com.realitygames.couchbase.QueryResult.{FailureQueryResult, SuccessQueryResult}
+import com.realitygames.couchbase.RxObservableConversion.ObservableConversions
 import play.api.libs.json._
 
 import scala.concurrent.duration._

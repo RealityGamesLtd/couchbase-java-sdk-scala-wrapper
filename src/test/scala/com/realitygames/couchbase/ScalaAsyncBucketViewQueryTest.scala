@@ -1,9 +1,7 @@
 package com.realitygames.couchbase
 
-import com.couchbase.client.java.view.ViewQuery
-import com.realitygames.couchbase.QueryResult.SuccessQueryResult
 import com.couchbase.client.java.view.{Stale, ViewQuery}
-import com.realitygames.couchbase.ViewResult.SuccessViewResult
+import com.realitygames.couchbase.QueryResult.SuccessQueryResult
 import com.realitygames.couchbase.models.TestStructure
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{AsyncWordSpec, _}

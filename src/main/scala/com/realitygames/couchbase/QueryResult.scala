@@ -1,6 +1,5 @@
 package com.realitygames.couchbase
 
-import com.realitygames.couchbase.QueryResult.FailureQueryResult
 import play.api.libs.json.{JsObject, JsString}
 
 sealed abstract class QueryResult[+T]
