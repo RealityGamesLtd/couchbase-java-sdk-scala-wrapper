@@ -15,8 +15,8 @@ object N1qlQueryResult {
   }
 
   case class SuccessN1qlQueryResult[T](
-                                    values: Seq[T],
-                                    totalResults: Int,
-                                    parseFailedDocuments: Seq[ParseFailedN1ql]
-                                  ) extends N1qlQueryResult[T]
+    values: Seq[T],
+    totalResults: Int,
+    parseFailedDocuments: Seq[ParseFailedN1ql]
+  ) extends N1qlQueryResult[T]
 }
