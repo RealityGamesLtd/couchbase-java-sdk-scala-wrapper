@@ -110,7 +110,7 @@ class ScalaAsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with
 
             documents.head.content mustEqual TestStructure("string", 1, 2, 3, true, 4.5f, 5.5)
 
-            failedDocuments.head.cause.isInstanceOf[JsResultException] mustBe true
+            failedDocuments.head.errors must not be empty
             failedDocuments.head.raw mustEqual Json.parse(
               """{
                 |  "string": 123,

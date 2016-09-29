@@ -6,11 +6,14 @@ import com.couchbase.client.java.query.N1qlQuery
 import com.couchbase.client.java.view.ViewQuery
 import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket}
 import com.realitygames.couchbase.model.{Document, Expiration, RemovedDocument}
+import com.realitygames.couchbase.query.N1qlQueryResult.{FailureN1qlQueryResult, SuccessN1qlQueryResult}
 import com.realitygames.couchbase.query.QueryResult.{FailureQueryResult, SuccessQueryResult}
 import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversions
-import com.realitygames.couchbase.query.{ParseFailedDocument, QueryResult, RowsConversions}
+import com.realitygames.couchbase.query._
 import com.realitygames.couchbase.util.{DocumentUtil, JsonConversions}
 import play.api.libs.json._
+import scala.collection.JavaConversions.collectionAsScalaIterable
+import scala.language.implicitConversions
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
@@ -82,32 +85,38 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
       viewResult.rows().mapAsFuture[Either[ParseFailedDocument, Document[T]]](asyncViewRow2document) map { documents =>
 
         SuccessQueryResult(
-          documents collect { case Right(document) => document },
-          viewResult.totalRows(),
-          documents collect { case Left(failedDocument) => failedDocument }
+          values = documents collect { case Right(document) => document },
+          totalResults = viewResult.totalRows(),
+          parseFailedDocuments = documents collect { case Left(failedDocument) => failedDocument }
         )
       }
     } else {
-//      viewResult.error().asFutureNoUnpack(ec) map (e => FailureQueryResult(e)) TODO
+
       Future.successful(FailureQueryResult("error"))
     }
   }
 
-  def query[T](query: N1qlQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[QueryResult[T]] = {
+  def query[T](query: N1qlQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[N1qlQueryResult[T]] = {
     bucket.query(query).asFuture flatMap { queryResult =>
-      if(queryResult.parseSuccess()) {
-          queryResult.finalSuccess().asFuture flatMap { success =>
+      if(queryResult.parseSuccess) {
+          queryResult.finalSuccess.asFuture.flatMap { success =>
             if(success) {
-              queryResult.rows().mapAsFuture[Document[T]](asyncN1qlRow2document).map { docs =>
-                SuccessQueryResult(docs, docs.size, Seq.empty /*TODO*/)
+              queryResult.rows().mapAsFuture[Option[Either[ParseFailedN1ql, T]]](asyncN1qlRow2document(this.bucket.name, _)).map { docs =>
+                SuccessN1qlQueryResult(
+                  values = docs collect { case Some(Right(x)) => x },
+                  totalResults = docs.size,
+                  parseFailedDocuments = docs collect { case Some(Left(y)) => y }
+                )
               }
             } else {
-              Future.successful(FailureQueryResult("query failed"))
+              queryResult.errors().toList.asFuture map { errors =>
+                FailureN1qlQueryResult(errors.toList.map(couchbaseJsonObject2playJsObject))
+              }
             }
 
           }
 
-      } else Future.successful(FailureQueryResult("Parse error - instant fail. Check your N1ql syntax."))
+      } else Future.successful(FailureN1qlQueryResult("Query parse error - instant fail. Check your N1ql syntax."))
     }
   }
 }

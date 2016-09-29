@@ -21,23 +21,34 @@ protected[couchbase] trait RowsConversions extends JsonConversions {
 
     jsValue.validate[T] match {
       case JsError(errors) =>
-        Left(ParseFailedDocument(view.id(), jsValue, JsResultException(errors)))
+        Left(ParseFailedDocument(view.id(), jsValue, errors))
       case JsSuccess(content, _) =>
-        Right(Document(view.id(), 0l, content))
+        Right(Document(
+          id = view.id(),
+          cas = 0l,
+          content = content
+        ))
     }
   }
 
   implicit protected[couchbase] def asyncN1qlRow2document[T](
+    bucketName: String,
     view: AsyncN1qlQueryRow
   )(
     implicit ec: ExecutionContext,
     reads: Reads[T]
-  ): Document[T] = {
-    Document(
-      id = "",
-      cas = 0l,
-      content = Json.parse(view.value().toString).\(???.toString).validate[T].get
-    )
+  ): Option[Either[ParseFailedN1ql, T]] = {
+
+    val jsValueLookup = value2jsValue(view.value()) \ bucketName
+
+
+    jsValueLookup.toOption map { jsValue =>
+      jsValue.validate[T] match {
+      case JsError(errors) =>
+        Left(ParseFailedN1ql(jsValue, errors))
+      case JsSuccess(content, _) =>
+        Right(content)
+    }}
   }
 
 }
