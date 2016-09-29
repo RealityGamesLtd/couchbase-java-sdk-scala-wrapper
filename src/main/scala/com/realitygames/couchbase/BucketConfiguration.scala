@@ -2,7 +2,7 @@ package com.realitygames.couchbase
 
 import com.typesafe.config.Config
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConversions.asScalaBuffer
 import scala.concurrent.duration.Duration
 import scala.util.Try
 

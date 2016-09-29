@@ -8,15 +8,15 @@ import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBuck
 import com.realitygames.couchbase.model.{Document, Expiration, RemovedDocument}
 import com.realitygames.couchbase.query.N1qlQueryResult.{FailureN1qlQueryResult, SuccessN1qlQueryResult}
 import com.realitygames.couchbase.query.QueryResult.{FailureQueryResult, SuccessQueryResult}
-import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversions
 import com.realitygames.couchbase.query._
+import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversions
 import com.realitygames.couchbase.util.{DocumentUtil, JsonConversions}
 import play.api.libs.json._
-import scala.collection.JavaConversions.collectionAsScalaIterable
-import scala.language.implicitConversions
 
+import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
 
 class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with JsonConversions {
 

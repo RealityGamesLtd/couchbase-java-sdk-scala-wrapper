@@ -1,0 +1,9 @@
+{
+    "views": {
+        "meta": {
+            "map": "function(doc, meta) {
+                emit(meta.id, meta);
+            }"
+        }
+    }
+}

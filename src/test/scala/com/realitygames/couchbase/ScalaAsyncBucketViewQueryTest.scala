@@ -1,11 +1,11 @@
 package com.realitygames.couchbase
 
 import com.couchbase.client.java.view.{Stale, ViewQuery}
-import com.realitygames.couchbase.query.QueryResult.SuccessQueryResult
 import com.realitygames.couchbase.models.TestStructure
+import com.realitygames.couchbase.query.QueryResult.SuccessQueryResult
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.{AsyncWordSpec, _}
-import play.api.libs.json.{JsResultException, Json}
+import play.api.libs.json.Json
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -102,7 +102,6 @@ class ScalaAsyncBucketViewQueryTest extends AsyncWordSpec with MustMatchers with
         result <- bucket.query[TestStructure](ViewQuery.from("testStructure", "get_object").stale(Stale.FALSE))
       } yield {
 
-        println(result)
         inside(result){
           case SuccessQueryResult(documents, _, failedDocuments) =>
             documents.size mustBe 1
