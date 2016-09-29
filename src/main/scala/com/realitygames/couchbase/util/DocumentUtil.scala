@@ -1,6 +1,8 @@
-package com.realitygames.couchbase
+package com.realitygames.couchbase.util
 
 import com.couchbase.client.java.document.{AbstractDocument, RawJsonDocument}
+import com.realitygames.couchbase._
+import com.realitygames.couchbase.model.Document
 import play.api.libs.json.{Json, Reads, Writes}
 
 protected[couchbase] object DocumentUtil {

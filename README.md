@@ -50,5 +50,5 @@ bucket.get[User]("someid")
 * replace
 * upsert
 * getAndTouch
-* query *(only ViewQuery, use java classes to create query)* 
+* query *(only ViewQuery and N1QL, use java classes to create query)* 
 * atomicUpdate

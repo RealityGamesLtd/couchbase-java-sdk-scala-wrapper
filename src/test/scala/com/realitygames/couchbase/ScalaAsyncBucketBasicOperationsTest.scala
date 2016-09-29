@@ -3,7 +3,11 @@ package com.realitygames.couchbase
 import java.util.UUID
 
 import com.couchbase.client.java.error.{DocumentAlreadyExistsException, DocumentDoesNotExistException}
+import com.couchbase.client.java.view.{Stale, ViewQuery}
+import com.github.nscala_time.time.Imports._
+import com.realitygames.couchbase.model.{Expiration, Meta}
 import com.realitygames.couchbase.models.User
+import com.realitygames.couchbase.query.QueryResult.SuccessQueryResult
 import org.joda.time.DateTime
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
@@ -11,7 +15,7 @@ import org.scalatest.concurrent.ScalaFutures
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ScalaAsyncBucketBasicOperationsTest extends AsyncWordSpec with MustMatchers with BucketTesting with ScalaFutures with BeforeAndAfterAll with RecoverMethods {
+class ScalaAsyncBucketBasicOperationsTest extends AsyncWordSpec with MustMatchers with BucketTesting with ScalaFutures with BeforeAndAfterAll with RecoverMethods with Inside {
 
   override def bucketName: String = "users"
 
@@ -218,4 +222,57 @@ class ScalaAsyncBucketBasicOperationsTest extends AsyncWordSpec with MustMatcher
       }
     }
   }
+
+  "insert document with no expiration time" in {
+    val id = getId
+    val user = User("a@b.c", "noname")
+
+    for {
+      _ <- bucket.insert(id, user)
+      meta <- bucket.query[Meta](ViewQuery.from("user", "meta").key(id).stale(Stale.FALSE))
+    } yield {
+      inside(meta){
+        case SuccessQueryResult(Seq(userMeta), _, _) =>
+          userMeta.content.id mustEqual id
+          userMeta.content.expiration mustEqual 0
+      }
+    }
+  }
+
+  "insert document with short expiration (<30d)" in {
+    val id = getId
+    val user = User("a@b.c", "noname")
+
+    val expiration = Expiration(DateTime.now() + 10.days)
+
+    for {
+      _ <- bucket.insert(id, user, expiration)
+      meta <- bucket.query[Meta](ViewQuery.from("user", "meta").key(id).stale(Stale.FALSE))
+    } yield {
+      inside(meta){
+        case SuccessQueryResult(Seq(userMeta), _, _) =>
+          userMeta.content.id mustEqual id
+          userMeta.content.expiration mustEqual expiration.seconds
+      }
+    }
+  }
+
+  "insert document with short expiration (>30d)" in {
+    val id = getId
+    val user = User("a@b.c", "noname")
+
+    val expiration = Expiration(DateTime.now() + 150.days)
+
+    for {
+      _ <- bucket.insert(id, user, expiration)
+      meta <- bucket.query[Meta](ViewQuery.from("user", "meta").key(id).stale(Stale.FALSE))
+    } yield {
+      inside(meta){
+        case SuccessQueryResult(Seq(userMeta), _, _) =>
+          userMeta.content.id mustEqual id
+          userMeta.content.expiration mustEqual expiration.seconds
+      }
+    }
+  }
+
 }

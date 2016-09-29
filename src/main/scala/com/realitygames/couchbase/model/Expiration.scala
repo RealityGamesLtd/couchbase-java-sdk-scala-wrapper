@@ -1,4 +1,4 @@
-package com.realitygames.couchbase
+package com.realitygames.couchbase.model
 
 import org.joda.time.DateTime
 

@@ -2,16 +2,23 @@ package com.realitygames.couchbase
 
 import java.util.concurrent.TimeUnit
 
+import com.couchbase.client.java.query.N1qlQuery
 import com.couchbase.client.java.view.ViewQuery
 import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket}
-import com.realitygames.couchbase.RxObservableConversion.{ObservableConversions, asyncViewRow2document}
-import com.realitygames.couchbase.ViewResult.{FailureViewResult, SuccessViewResult}
+import com.realitygames.couchbase.model.{Document, Expiration, RemovedDocument}
+import com.realitygames.couchbase.query.N1qlQueryResult.{FailureN1qlQueryResult, SuccessN1qlQueryResult}
+import com.realitygames.couchbase.query.QueryResult.{FailureQueryResult, SuccessQueryResult}
+import com.realitygames.couchbase.query._
+import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversions
+import com.realitygames.couchbase.util.{DocumentUtil, JsonConversions}
 import play.api.libs.json._
 
+import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.implicitConversions
 
-class ScalaAsyncBucket(bucket: JavaAsyncBucket) {
+class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with JsonConversions {
 
   def atomicUpdate[T](id: String, lockTime: Duration = 3.seconds)(update: Document[T] => Future[T])(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
 
@@ -72,18 +79,44 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) {
     bucket.upsert(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def query[T](query: ViewQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[ViewResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
+  def query[T](query: ViewQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[QueryResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
 
     if (viewResult.success()) {
-      viewResult.rows().asFutureList[Document[T]](asyncViewRow2document(_)(ec, reads), ec) map { documents =>
+      viewResult.rows().mapAsFuture[Either[ParseFailedDocument, Document[T]]](asyncViewRow2document) map { documents =>
 
-        SuccessViewResult(
-          documents,
-          viewResult.totalRows()
+        SuccessQueryResult(
+          values = documents collect { case Right(document) => document },
+          totalResults = viewResult.totalRows(),
+          parseFailedDocuments = documents collect { case Left(failedDocument) => failedDocument }
         )
       }
     } else {
-      Future.successful(FailureViewResult)
+
+      Future.successful(FailureQueryResult("error"))
+    }
+  }
+
+  def query[T](query: N1qlQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[N1qlQueryResult[T]] = {
+    bucket.query(query).asFuture flatMap { queryResult =>
+      if(queryResult.parseSuccess) {
+          queryResult.finalSuccess.asFuture.flatMap { success =>
+            if(success) {
+              queryResult.rows().mapAsFuture[Option[Either[ParseFailedN1ql, T]]](asyncN1qlRow2document(this.bucket.name, _)).map { docs =>
+                SuccessN1qlQueryResult(
+                  values = docs collect { case Some(Right(x)) => x },
+                  totalResults = docs.size,
+                  parseFailedDocuments = docs collect { case Some(Left(y)) => y }
+                )
+              }
+            } else {
+              queryResult.errors().toList.asFuture map { errors =>
+                FailureN1qlQueryResult(errors.toList.map(couchbaseJsonObject2playJsObject))
+              }
+            }
+
+          }
+
+      } else Future.successful(FailureN1qlQueryResult("Query parse error - instant fail. Check your N1ql syntax."))
     }
   }
 }
