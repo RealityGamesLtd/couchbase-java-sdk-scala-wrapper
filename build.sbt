@@ -11,9 +11,9 @@ lazy val root = (project in file(".")).settings(
 
     "com.github.nscala-time" %% "nscala-time" % "2.14.0",
 
-    "com.typesafe.play" % "play-json_2.11" % "2.5.6",
+    "com.typesafe.play" % "play-json_2.11" % "2.5.8",
 
-    "org.slf4j" % "slf4j-api" % "1.7.7" % "test",
+    "org.slf4j" % "slf4j-api" % "1.7.21" % "test",
     "ch.qos.logback" % "logback-classic" % "1.1.7" % "test",
 
     "org.scalactic" %% "scalactic" % "3.0.0",
