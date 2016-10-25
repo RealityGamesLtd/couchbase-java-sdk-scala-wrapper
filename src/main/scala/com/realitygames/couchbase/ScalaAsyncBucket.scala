@@ -69,13 +69,13 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
     bucket.remove(id).asFuture map RemovedDocument.fromCouchbaseDoc
   }
 
-  def replace[T](id: String, value: T)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
-    val document = DocumentUtil.createCouchbaseDocument(id, Some(value))
+  def replace[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+    val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiry = expiration.seconds)
     bucket.replace(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def upsert[T](id: String, value: T)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
-    val document = DocumentUtil.createCouchbaseDocument(id, Some(value))
+  def upsert[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+    val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiry = expiration.seconds)
     bucket.upsert(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
