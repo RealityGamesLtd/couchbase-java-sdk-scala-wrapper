@@ -2,13 +2,13 @@ package com.realitygames.couchbase.util
 
 import java.util.{List => JavaList}
 
-import com.realitygames.couchbase.query.RowsConversions
+import com.realitygames.couchbase.query.RowConversions
 import rx.SingleSubscriber
 
 import scala.collection.JavaConversions.asScalaBuffer
 import scala.collection.breakOut
 import scala.concurrent.{ExecutionContext, Future, Promise}
-object RxObservableConversion extends RowsConversions {
+object RxObservableConversion extends RowConversions {
 
   implicit protected[couchbase] class ObservableConversions[T](underlying: rx.Observable[T]) {
 

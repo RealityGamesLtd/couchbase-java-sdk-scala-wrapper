@@ -5,22 +5,21 @@ import java.util.concurrent.TimeUnit
 import com.couchbase.client.java.query.N1qlQuery
 import com.couchbase.client.java.view.ViewQuery
 import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket}
+import com.realitygames.couchbase.json.{JsonFormatter, JsonReader, JsonWriter}
 import com.realitygames.couchbase.model.{Document, Expiration, RemovedDocument}
 import com.realitygames.couchbase.query.N1qlQueryResult.{FailureN1qlQueryResult, SuccessN1qlQueryResult}
 import com.realitygames.couchbase.query.QueryResult.{FailureQueryResult, SuccessQueryResult}
 import com.realitygames.couchbase.query._
+import com.realitygames.couchbase.util.DocumentUtil
 import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversions
-import com.realitygames.couchbase.util.{DocumentUtil, JsonConversions}
-import play.api.libs.json._
 
-import scala.collection.JavaConversions.collectionAsScalaIterable
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
 
-class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with JsonConversions {
+class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
 
-  def atomicUpdate[T](id: String, lockTime: Duration = 3.seconds)(update: Document[T] => Future[T])(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def atomicUpdate[T](id: String, lockTime: Duration = 3.seconds)(update: Document[T] => Future[T])(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
 
     assert(lockTime >= 1.seconds && lockTime <= 30.seconds, "Lock time must be between 1 and 30 seconds")
 
@@ -50,17 +49,18 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
     bucket.exists(id).asFuture map { _.booleanValue }
   }
 
-  def get[T](id: String)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def get[T](id: String)(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id)
+    println(">>>>>"+document)
     bucket.get(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def getAndTouch[T](id: String, expiry: Expiration)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def getAndTouch[T](id: String, expiry: Expiration)(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, expiry = expiry.seconds)
     bucket.getAndTouch(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def insert[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: Format[T], writes: Writes[T], ec: ExecutionContext): Future[Document[T]] = {
+  def insert[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: JsonFormatter[T], writes: JsonWriter[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiration.seconds)
     bucket.insert(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
@@ -69,17 +69,17 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
     bucket.remove(id).asFuture map RemovedDocument.fromCouchbaseDoc
   }
 
-  def replace[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def replace[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiry = expiration.seconds)
     bucket.replace(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def upsert[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: Format[T], ec: ExecutionContext): Future[Document[T]] = {
+  def upsert[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiry = expiration.seconds)
     bucket.upsert(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def query[T](query: ViewQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[QueryResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
+  def query[T](query: ViewQuery)(implicit reads: JsonReader[T], ec: ExecutionContext): Future[QueryResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
 
     if (viewResult.success()) {
       viewResult.rows().mapAsFuture[Either[ParseFailedDocument, Document[T]]](asyncViewRow2document) map { documents =>
@@ -96,7 +96,7 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
     }
   }
 
-  def query[T](query: N1qlQuery)(implicit reads: Reads[T], ec: ExecutionContext): Future[N1qlQueryResult[T]] = {
+  def query[T](query: N1qlQuery)(implicit reads: JsonReader[T], ec: ExecutionContext): Future[N1qlQueryResult[T]] = {
     bucket.query(query).asFuture flatMap { queryResult =>
       if(queryResult.parseSuccess) {
           queryResult.finalSuccess.asFuture.flatMap { success =>
@@ -110,7 +110,8 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowsConversions with Jso
               }
             } else {
               queryResult.errors().toList.asFuture map { errors =>
-                FailureN1qlQueryResult(errors.toList.map(couchbaseJsonObject2playJsObject))
+                ???
+//                FailureN1qlQueryResult(errors.toList.map(couchbaseJsonObject2playJsObject))
               }
             }
 
