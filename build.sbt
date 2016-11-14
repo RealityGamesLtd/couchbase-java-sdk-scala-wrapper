@@ -30,24 +30,5 @@ lazy val root = (project in file(".")).settings(
     "io.circe" %% "circe-parser" % "0.6.0" % "test"
   ),
 
-  resolvers ++= Seq(
-    "Realitygames-Snapshots" at "http://nexus.landlordgame.com:8081/repository/realitygames-snapshots/",
-    "Realitygames-Releases" at "http://nexus.landlordgame.com:8081/repository/realitygames-releases/"
-  ),
-
-  publishTo := Some("Realitygames-Snapshots" at "http://nexus.landlordgame.com:8081/repository/realitygames-snapshots/"),
-
-  credentials += {
-    if (sys.env.isDefinedAt("JENKINS_HOME")) {
-      Credentials(
-        realm = "Sonatype Nexus",
-        host = "nexus.landlordgame.com",
-        userName = sys.env.apply("JENKINS_NEXUS_USER"),
-        passwd = sys.env.apply("JENKINS_NEXUS_PASSWORD")
-      )
-    } else {
-      Credentials(Path.userHome / ".ivy2" / ".credentials")
-    }},
-
   addCompilerPlugin("org.psywerx.hairyfotr" %% "linter" % "0.1.16")
 )
