@@ -16,29 +16,70 @@ import com.realitygames.couchbase.util.RxObservableConversion.ObservableConversi
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.implicitConversions
+import scala.util.Failure
 
 class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
 
-  def atomicUpdate[T](id: String, lockTime: Duration = 3.seconds)(update: Document[T] => Future[T])(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
+  def atomicUpdate[A, B](
+    id: String,
+    lockTime: Duration = 3.seconds
+  )(
+    update: Document[B] => Future[Either[A, B]]
+  )(
+    implicit format: JsonFormatter[B],
+    ec: ExecutionContext
+  ): Future[Either[A, Document[B]]] = {
 
     assert(lockTime >= 1.seconds && lockTime <= 30.seconds, "Lock time must be between 1 and 30 seconds")
 
-    def updateAndUnlockOnFailure(document: Document[T]): Future[T] = {
-      val f = update(document)
-      f.onFailure{ case t: Throwable => bucket.unlock(id, document.cas) }
-      f
+    val documentF = bucket.getAndLock(DocumentUtil.createCouchbaseDocument(id), lockTime.toSeconds.toInt).asFuture map DocumentUtil.fromCouchbaseDocument[B]
+
+    documentF flatMap { document =>
+
+      update(document) flatMap {
+        case Left(l) =>
+
+          bucket.unlock(id, document.cas)
+          Future.successful(Left(l))
+
+        case Right(updatedValue) =>
+
+          val updatedDocument = bucket.replace(DocumentUtil.createCouchbaseDocument(id, Some(updatedValue), cas = document.cas))
+            .asFuture map DocumentUtil.fromCouchbaseDocument[B]
+          updatedDocument onComplete {
+            case Failure(_) =>
+              bucket.unlock(id, document.cas)
+            case _ =>
+          }
+          updatedDocument map { Right(_) }
+
+      }
     }
+  }
 
-    val documentF = bucket.getAndLock(DocumentUtil.createCouchbaseDocument(id), lockTime.toSeconds.toInt).asFuture map DocumentUtil.fromCouchbaseDocument[T]
+  def atomicUpdateOpt[T](
+    id: String,
+    lockTime: Duration = 3.seconds
+  )(
+    update: Document[T] => Future[Option[T]]
+  )(
+    implicit format: JsonFormatter[T],
+    ec: ExecutionContext
+  ): Future[Option[Document[T]]] = {
 
-    val replacedF = for {
-      document <- documentF
-      updated <- updateAndUnlockOnFailure(document)
-    } yield {
-      bucket.replace(DocumentUtil.createCouchbaseDocument(id, Some(updated), cas = document.cas)).asFuture map DocumentUtil.fromCouchbaseDocument[T]
-    }
+    atomicUpdate[Unit, T](id, lockTime){doc => update(doc) map {_ toRight ()}} map {_.toOption}
+  }
 
-    replacedF flatMap identity
+  def atomicUpdateSimple[T](
+    id: String,
+    lockTime: Duration = 3.seconds
+  )(
+    update: Document[T] => Future[T]
+  )(
+    implicit format: JsonFormatter[T],
+    ec: ExecutionContext
+  ): Future[Document[T]] = {
+    atomicUpdate[Unit, T](id, lockTime){doc => update(doc) map { Right(_) } } map {_.toOption.get }
   }
 
   def close()(implicit ec: ExecutionContext): Future[Boolean] = {
@@ -51,7 +92,6 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
 
   def get[T](id: String)(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id)
-    println(">>>>>"+document)
     bucket.get(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
@@ -101,7 +141,7 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
       if(queryResult.parseSuccess) {
           queryResult.finalSuccess.asFuture.flatMap { success =>
             if(success) {
-              queryResult.rows().mapAsFuture[Option[Either[ParseFailedN1ql, T]]](asyncN1qlRow2document(this.bucket.name, _)).map { docs =>
+              queryResult.rows().mapAsFuture[Option[Either[ParseFailedN1ql, T]]](asyncN1qlRow2document(this.bucket.name, _)) map { docs =>
                 SuccessN1qlQueryResult(
                   values = docs collect { case Some(Right(x)) => x },
                   totalResults = docs.size,
