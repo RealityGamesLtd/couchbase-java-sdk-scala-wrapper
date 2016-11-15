@@ -26,7 +26,7 @@ class ScalaAsyncBucketBasicOperationsTest extends AsyncWordSpec with MustMatcher
 
   def getId: String = UUID.randomUUID().toString
 
-  "AsyncBucket.atomicUpdate" should {
+  "AsyncBucket.atomicUpdate*" should {
     "do atomic update if document exists" in {
 
       val id = getId
@@ -34,10 +34,40 @@ class ScalaAsyncBucketBasicOperationsTest extends AsyncWordSpec with MustMatcher
       val newUser = User("sample@email.com", "newname")
 
       bucket.insert(id, user) flatMap  { doc =>
-        bucket.atomicUpdate[User](id){doc =>
+        bucket.atomicUpdateSimple[User](id){doc =>
           Future.successful(doc.content.copy(email = "new_email@aaa.bb"))
         } map { doc =>
           doc.content.email mustEqual "new_email@aaa.bb"
+        }
+      }
+    }
+
+    "return Left value, if it's returned by update function" in {
+
+      val id = getId
+      val user = User("a@b.c", "noname")
+      val newUser = User("sample@email.com", "newname")
+
+      bucket.insert(id, user) flatMap  { doc =>
+        bucket.atomicUpdate[String, User](id){doc =>
+          Future.successful(Left("some error"))
+        } map { doc =>
+          doc mustBe Left("some error")
+        }
+      }
+    }
+
+    "return None, if None is returned by update function" in {
+
+      val id = getId
+      val user = User("a@b.c", "noname")
+      val newUser = User("sample@email.com", "newname")
+
+      bucket.insert(id, user) flatMap  { doc =>
+        bucket.atomicUpdateOpt[User](id){doc =>
+          Future.successful(None)
+        } map { doc =>
+          doc mustBe None
         }
       }
     }
