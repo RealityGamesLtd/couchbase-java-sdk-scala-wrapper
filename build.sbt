@@ -1,8 +1,8 @@
 import sbt.Keys._
 
 lazy val root = (project in file(".")).settings(
-  scalaVersion := "2.12.0",
-//  crossScalaVersions := Seq("2.11.8", "2.12.0"),
+  scalaVersion := "2.11.8",
+  crossScalaVersions := Seq("2.11.8", "2.12.0"),
   organization := "com.realitygames",
   name := "couchbase-java-sdk-scala-wrapper",
   version := "0.1-SNAPSHOT",

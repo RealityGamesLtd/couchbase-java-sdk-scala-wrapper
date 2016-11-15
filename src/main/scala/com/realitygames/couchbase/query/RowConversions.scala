@@ -36,7 +36,12 @@ protected[couchbase] trait RowConversions {
             cas = 0l,
             content = primitive
           )
-        }.toEither.swap.map{t => ParseFailedDocument(view.id(), primitive, Seq(t))}.swap
+        } match {
+          case Success(result) =>
+            Right(result)
+          case Failure(thr) =>
+            Left(ParseFailedDocument(view.id(), primitive, Seq(thr)))
+        }
     }
   }
 
