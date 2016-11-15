@@ -5,14 +5,15 @@ import java.util.UUID
 import com.couchbase.client.java.error.{DocumentAlreadyExistsException, DocumentDoesNotExistException}
 import com.couchbase.client.java.view.{Stale, ViewQuery}
 import com.github.nscala_time.time.Imports._
+import com.realitygames.couchbase.json.circe._
 import com.realitygames.couchbase.model.{Expiration, Meta}
 import com.realitygames.couchbase.models.User
 import com.realitygames.couchbase.query.QueryResult.SuccessQueryResult
+import io.circe.generic.auto._
 import org.joda.time.DateTime
 import org.scalatest._
 import org.scalatest.concurrent.ScalaFutures
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ScalaAsyncBucketBasicOperationsTest extends AsyncWordSpec with MustMatchers with BucketTesting with ScalaFutures with BeforeAndAfterAll with RecoverMethods with Inside {

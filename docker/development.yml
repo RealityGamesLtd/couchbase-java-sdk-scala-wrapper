@@ -5,6 +5,7 @@ services:
     ports:
       - "8091-8094:8091-8094"
       - "11210:11210"
+    network_mode: host
     environment:
       - BUCKETS=users viewQuery
       - MEMORY_QUOTA=500

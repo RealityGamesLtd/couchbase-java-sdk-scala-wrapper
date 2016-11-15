@@ -1,7 +1,5 @@
 package com.realitygames.couchbase.models
 
-import play.api.libs.json.{Format, Json}
-
 case class TestStructure(
   string: String,
   int: Int,
@@ -12,6 +10,6 @@ case class TestStructure(
   double: Double
 )
 
-object TestStructure {
-  implicit val format: Format[TestStructure] = Json.format[TestStructure]
-}
+//object TestStructure {
+//  implicit val format: Format[TestStructure] = Json.format[TestStructure]
+//}
