@@ -29,36 +29,34 @@ protected[couchbase] trait RowConversions {
               content = content
             ))
         }
-      case primitive: T =>
-        primitive match {
-          case v: T => Right(Document(
+      case primitive: T @unchecked =>
+        Try{
+          Document[T](
             id = view.id(),
             cas = 0l,
-            content = v
-          ))
-          case _ =>
-            Left(ParseFailedDocument(view.id(), primitive, Seq(new ClassCastException)))
-        }
+            content = primitive
+          )
+        }.toEither.swap.map{t => ParseFailedDocument(view.id(), primitive, Seq(t))}.swap
     }
   }
 
-    implicit protected[couchbase] def asyncN1qlRow2document[T](
-      bucketName: String,
-      view: AsyncN1qlQueryRow
-    )(
-      implicit ec: ExecutionContext,
-      jsonRead: JsonReader[T]
-    ): Option[Either[ParseFailedN1ql, T]] = {
+  implicit protected[couchbase] def asyncN1qlRow2document[T](
+    bucketName: String,
+    view: AsyncN1qlQueryRow
+  )(
+    implicit ec: ExecutionContext,
+    jsonRead: JsonReader[T]
+  ): Option[Either[ParseFailedN1ql, T]] = {
 
-      Try{
-        val json = view.value().get(bucketName).toString
-        jsonRead.read(json) match {
-          case Failure(t) =>
-            Left(ParseFailedN1ql(json, Seq(t)))
-          case Success(content) =>
-            Right(content)
-        }
-      }.toOption
-    }
-
+    Try{
+      val json = view.value().get(bucketName).toString
+      jsonRead.read(json) match {
+        case Failure(t) =>
+          Left(ParseFailedN1ql(json, Seq(t)))
+        case Success(content) =>
+          Right(content)
+      }
+    }.toOption
   }
+
+}

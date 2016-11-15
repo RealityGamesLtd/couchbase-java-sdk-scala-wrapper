@@ -9,9 +9,7 @@ object QueryResult {
   case class FailureQueryResult(errors: Any) extends QueryResult[Nothing]
 
   object FailureQueryResult {
-    def apply(errorMessage: String): FailureQueryResult = ??? /*FailureQueryResult(JsObject(Map(
-      "msg" -> JsString(errorMessage)
-    )))*/
+    def apply(errorMessage: String): FailureQueryResult = FailureQueryResult(errorMessage)
   }
 
   case class SuccessQueryResult[T](

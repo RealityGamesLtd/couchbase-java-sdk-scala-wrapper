@@ -7,9 +7,7 @@ object N1qlQueryResult {
   case class FailureN1qlQueryResult(errors: List[Any]) extends N1qlQueryResult[Nothing]
 
   object FailureN1qlQueryResult{
-    def apply(errorMessage: String): FailureN1qlQueryResult = ??? /*FailureN1qlQueryResult(JsObject(Map(
-      "msg" -> JsString(errorMessage)
-    ))::Nil)*/
+    def apply(errorMessage: String): FailureN1qlQueryResult = FailureN1qlQueryResult(errorMessage :: Nil)
   }
 
   case class SuccessN1qlQueryResult[T](

@@ -15,10 +15,14 @@ object circe {
     }
   }
 
-  implicit def writeAndRead2format[T](implicit reader: JsonReader[T], writer: JsonWriter[T]): JsonFormatter[T] = new JsonFormatter[T] {
+  implicit def writeAndRead2format[T](implicit encoder: Encoder[T], decoder: Decoder[T]): JsonFormatter[T] = new JsonFormatter[T] {
 
-    override def read(json: String): Try[T] = reader.read(json)
+    override def read(json: String): Try[T] = {
+      parse(json).toTry flatMap { parsed =>
+        decoder.decodeJson(parsed).toTry
+      }
+    }
 
-    override def write(obj: T): String = writer.write(obj)
+    override def write(obj: T): String = encoder.apply(obj).toString()
   }
 }
