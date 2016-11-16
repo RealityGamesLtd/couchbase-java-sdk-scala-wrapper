@@ -5,7 +5,7 @@ lazy val root = (project in file(".")).settings(
   crossScalaVersions := Seq("2.11.8", "2.12.0"),
   organization := "com.realitygames",
   name := "couchbase-java-sdk-scala-wrapper",
-  version := "0.1-SNAPSHOT",
+  version := "0.1.2-SNAPSHOT",
 
   libraryDependencies ++= Seq(
     "com.couchbase.client" % "java-client" % "2.3.5",

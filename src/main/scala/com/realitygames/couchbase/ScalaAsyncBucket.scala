@@ -2,6 +2,7 @@ package com.realitygames.couchbase
 
 import java.util.concurrent.TimeUnit
 
+import com.couchbase.client.java.{PersistTo, ReplicateTo}
 import com.couchbase.client.java.query.N1qlQuery
 import com.couchbase.client.java.view.ViewQuery
 import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket, Bucket => JavaBucket}
@@ -22,7 +23,9 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
 
   def atomicUpdate[A, B](
     id: String,
-    lockTime: Duration = 3.seconds
+    lockTime: Duration = 3.seconds,
+    documentPersistTo: PersistTo = PersistTo.NONE,
+    documentReplicateTo: ReplicateTo = ReplicateTo.NONE
   )(
     update: Document[B] => Future[Either[A, B]]
   )(
@@ -44,7 +47,8 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
 
         case Right(updatedValue) =>
 
-          val updatedDocument = bucket.replace(DocumentUtil.createCouchbaseDocument(id, Some(updatedValue), cas = document.cas))
+          val doc = DocumentUtil.createCouchbaseDocument(id, Some(updatedValue), cas = document.cas)
+          val updatedDocument = bucket.replace(doc, documentPersistTo, documentReplicateTo)
             .asFuture map DocumentUtil.fromCouchbaseDocument[B]
           updatedDocument onComplete {
             case Failure(_) =>
@@ -57,6 +61,10 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
     }
   }
 
+  private def toOption[R](either: Either[_, R]): Option[R] = {
+    either.fold(_ => None, right => Some(right))
+  }
+
   def atomicUpdateOpt[T](
     id: String,
     lockTime: Duration = 3.seconds
@@ -67,7 +75,7 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
     ec: ExecutionContext
   ): Future[Option[Document[T]]] = {
 
-    atomicUpdate[Unit, T](id, lockTime){doc => update(doc) map {_ toRight ()}} map {_.toOption}
+    atomicUpdate[Unit, T](id, lockTime){doc => update(doc) map {_ toRight ()}} map toOption
   }
 
   def atomicUpdateSimple[T](
@@ -79,7 +87,7 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
     implicit format: JsonFormatter[T],
     ec: ExecutionContext
   ): Future[Document[T]] = {
-    atomicUpdate[Unit, T](id, lockTime){doc => update(doc) map { Right(_) } } map {_.toOption.get }
+    atomicUpdate[Unit, T](id, lockTime){doc => update(doc) map { Right(_) } } map toOption map {_.get}
   }
 
   def close()(implicit ec: ExecutionContext): Future[Boolean] = {
@@ -100,23 +108,51 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
     bucket.getAndTouch(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def insert[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: JsonFormatter[T], writes: JsonWriter[T], ec: ExecutionContext): Future[Document[T]] = {
+  def insert[T](
+    id: String,
+    value: T,
+    expiration: Expiration = Expiration.none,
+    documentPersistTo: PersistTo = PersistTo.NONE,
+    documentReplicateTo: ReplicateTo = ReplicateTo.NONE
+  )(implicit format: JsonFormatter[T], writes: JsonWriter[T], ec: ExecutionContext): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiration.seconds)
-    bucket.insert(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
+    bucket.insert(document, documentPersistTo, documentReplicateTo).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def remove(id: String)(implicit ec: ExecutionContext): Future[RemovedDocument] = {
-    bucket.remove(id).asFuture map RemovedDocument.fromCouchbaseDoc
+  def remove(
+    id: String,
+    documentPersistTo: PersistTo = PersistTo.NONE,
+    documentReplicateTo: ReplicateTo = ReplicateTo.NONE
+  )(implicit ec: ExecutionContext): Future[RemovedDocument] = {
+    bucket.remove(id, documentPersistTo, documentReplicateTo).asFuture map RemovedDocument.fromCouchbaseDoc
   }
 
-  def replace[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
+  def replace[T](
+    id: String,
+    value: T,
+    expiration: Expiration = Expiration.none,
+    documentPersistTo: PersistTo = PersistTo.NONE,
+    documentReplicateTo: ReplicateTo = ReplicateTo.NONE
+  )(
+    implicit format: JsonFormatter[T],
+    ec: ExecutionContext
+  ): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiry = expiration.seconds)
-    bucket.replace(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
+    bucket.replace(document, documentPersistTo, documentReplicateTo).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
-  def upsert[T](id: String, value: T, expiration: Expiration = Expiration.none)(implicit format: JsonFormatter[T], ec: ExecutionContext): Future[Document[T]] = {
+  def upsert[T](
+    id: String,
+    value: T,
+    expiration: Expiration = Expiration.none,
+    documentPersistTo: PersistTo = PersistTo.NONE,
+    documentReplicateTo: ReplicateTo = ReplicateTo.NONE
+  )(
+    implicit format: JsonFormatter[T],
+    ec: ExecutionContext
+  ): Future[Document[T]] = {
     val document = DocumentUtil.createCouchbaseDocument(id, Some(value), expiry = expiration.seconds)
-    bucket.upsert(document).asFuture map DocumentUtil.fromCouchbaseDocument[T]
+    bucket.upsert(document, documentPersistTo, documentReplicateTo).asFuture map DocumentUtil.fromCouchbaseDocument[T]
   }
 
   def query[T](query: ViewQuery)(implicit reads: JsonReader[T], ec: ExecutionContext): Future[QueryResult[T]] = bucket.query(query).asFuture flatMap { viewResult =>
