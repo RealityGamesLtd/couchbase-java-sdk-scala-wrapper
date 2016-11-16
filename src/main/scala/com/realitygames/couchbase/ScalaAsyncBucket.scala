@@ -4,7 +4,7 @@ import java.util.concurrent.TimeUnit
 
 import com.couchbase.client.java.query.N1qlQuery
 import com.couchbase.client.java.view.ViewQuery
-import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket}
+import com.couchbase.client.java.{CouchbaseCluster, AsyncBucket => JavaAsyncBucket, Bucket => JavaBucket}
 import com.realitygames.couchbase.json.{JsonFormatter, JsonReader, JsonWriter}
 import com.realitygames.couchbase.model.{Document, Expiration, RemovedDocument}
 import com.realitygames.couchbase.query.N1qlQueryResult.{FailureN1qlQueryResult, SuccessN1qlQueryResult}
@@ -163,8 +163,9 @@ class ScalaAsyncBucket(bucket: JavaAsyncBucket) extends RowConversions {
 }
 
 object ScalaAsyncBucket {
+
   def apply(configuration: BucketConfiguration): ScalaAsyncBucket = {
-    val cluster = CouchbaseCluster.create(configuration.hosts:_*)
+    val cluster = CouchbaseCluster.create(configuration.hosts: _*)
 
     configuration.timeout.map(_.toMillis) match {
       case Some(timeout) =>
@@ -177,6 +178,14 @@ object ScalaAsyncBucket {
           .scalaAsync()
     }
 
-
   }
+
+  def apply(bucket: JavaAsyncBucket): ScalaAsyncBucket = {
+    new ScalaAsyncBucket(bucket)
+  }
+
+  def apply(bucket: JavaBucket): ScalaAsyncBucket = {
+    new ScalaAsyncBucket(bucket.async())
+  }
+
 }
